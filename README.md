@@ -11,6 +11,7 @@
 ## ✨ Features
 
 - 💰 **Real-Time Cost Estimation** – Instantly calculates your total build cost as you add components  
+- 💱 **Multi-Currency Support** – Supports 15+ currencies with real-time exchange rates and automatic conversion  
 - ⚡ **Smart PSU Calculator** – Recommends ideal PSU wattage based on CPU/GPU TDP values  
 - 🌙 **Dark & Light Mode** – Easily toggle between themes for comfortable viewing  
 - 🎨 **Modern UI** – Built with Material Design 3 for a clean, responsive experience  
@@ -55,11 +56,29 @@ The app estimates recommended PSU wattage using the following formula:
 
 ---
 
+## 💱 Currency Conversion
+
+The app supports real-time currency conversion with the following features:
+
+- **15+ Supported Currencies**: USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY, INR, BRL, KRW, MXN, SAR, AED, ZAR, and more
+- **Real-Time Exchange Rates**: Automatically fetches latest rates from exchangerate-api.com
+- **USD Equivalent Display**: Shows USD equivalent when using non-USD currencies for easy comparison
+- **Manual Refresh**: Tap the refresh button to update exchange rates anytime
+- **Offline Fallback**: Works offline with cached rates (shows USD equivalent)
+
+### How It Works
+
+1. Select your preferred currency from the dropdown in the header
+2. Enter component prices in your selected currency
+3. The app automatically converts to USD internally for calculations
+4. Total cost displays in your selected currency with USD equivalent shown alongside
+
+---
+
 ## 🧩 Planned Enhancements
 
 - 🔧 Add presets for popular CPUs and GPUs  
 - 💾 Save/load build profiles  
-- 💱 Currency conversion support  
 - 📶 Offline data persistence
 
 ---
@@ -71,6 +90,7 @@ The app estimates recommended PSU wattage using the following formula:
 | Flutter           | UI framework           |
 | Dart              | Programming language   |
 | Material Design 3 | UI components          |
+| HTTP              | API calls for exchange rates |
 
 ---
 
@@ -82,5 +102,5 @@ This project is licensed under the [MIT License](https://opensource.org/licenses
 
 ## 👨‍💻 Author
 
-Built with ❤️ by *Brave*
+Built with ❤️ by *Mantach*
  — for PC builders everywhere.
