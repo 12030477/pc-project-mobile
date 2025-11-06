@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -113,8 +114,22 @@ class MyHomePageState extends State<MyHomePage> {
     super.initState();
     // Initialize with USD rates (1.0 for USD)
     exchangeRates['USD'] = 1.0;
+    // Load saved theme preference
+    _loadThemePreference();
     // Fetch exchange rates on app start
     _fetchExchangeRates();
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  Future<void> _saveThemePreference(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
   }
 
   Future<void> _fetchExchangeRates() async {
@@ -192,171 +207,355 @@ class MyHomePageState extends State<MyHomePage> {
           child: SafeArea(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                                width: 2,
-                              ),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.asset(
-                                'assets/pcbuilderhelper.jpg',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'PC Build Helper',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.grey[900],
-                                ),
-                              ),
-                              Text(
-                                'Calculate your build budget',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDarkMode
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          // Currency selector
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color:
-                                  isDarkMode ? Colors.grey[800] : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? Colors.grey[700]!
-                                    : Colors.grey[300]!,
-                              ),
-                            ),
-                            child: DropdownButton<Currency>(
-                              value: selectedCurrency,
-                              underline: const SizedBox(),
-                              icon: Icon(
-                                Icons.arrow_drop_down,
-                                color: isDarkMode ? Colors.white : Colors.black,
-                              ),
-                              dropdownColor:
-                                  isDarkMode ? Colors.grey[800] : Colors.white,
-                              style: TextStyle(
-                                color: isDarkMode ? Colors.white : Colors.black,
-                                fontSize: 14,
-                              ),
-                              items: currencies.map((Currency currency) {
-                                return DropdownMenuItem<Currency>(
-                                  value: currency,
-                                  child: Text(
-                                      '${currency.symbol} ${currency.code}'),
-                                );
-                              }).toList(),
-                              onChanged: (Currency? newCurrency) {
-                                if (newCurrency != null) {
-                                  setState(() {
-                                    selectedCurrency = newCurrency;
-                                    // Recalculate if totalCost already exists
-                                    if (totalCost > 0) {
-                                      calculateTotal();
-                                    }
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Refresh exchange rates button
-                          Tooltip(
-                            message: 'Refresh exchange rates',
-                            child: IconButton(
-                              icon: isLoadingRates
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          isDarkMode
-                                              ? Colors.white70
-                                              : Colors.grey[600]!,
-                                        ),
-                                      ),
-                                    )
-                                  : Icon(
-                                      Icons.refresh,
-                                      size: 20,
+                // Responsive Header
+                Builder(
+                  builder: (context) {
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final isMobile = screenWidth < 600;
+                    final isPhone = screenWidth < 480; // Phones only, not tablets
+                    
+                    if (isMobile) {
+                      // Mobile Layout: Logo on left, Currency + buttons on right
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: [
+                            // Logo + Builder text (only on phones)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
                                       color: isDarkMode
-                                          ? Colors.white70
-                                          : Colors.grey[700],
+                                          ? Colors.grey[700]!
+                                          : Colors.grey[300]!,
+                                      width: 2,
                                     ),
-                              onPressed:
-                                  isLoadingRates ? null : _fetchExchangeRates,
-                              style: IconButton.styleFrom(
-                                backgroundColor: isDarkMode
-                                    ? Colors.grey[800]
-                                    : Colors.white,
-                                elevation: 2,
-                                padding: const EdgeInsets.all(12),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.asset(
+                                      'assets/pcbuilderhelper.jpg',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                if (isPhone) ...[
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Builder',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDarkMode
+                                          ? Colors.white
+                                          : Colors.grey[900],
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const Spacer(),
+                            // Currency selector - comfortable size near buttons
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              constraints: const BoxConstraints(
+                                minHeight: 40,
+                                maxHeight: 40,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    isDarkMode ? Colors.grey[800] : Colors.white,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isDarkMode
+                                      ? Colors.grey[700]!
+                                      : Colors.grey[300]!,
+                                ),
+                              ),
+                              child: DropdownButton<Currency>(
+                                value: selectedCurrency,
+                                underline: const SizedBox(),
+                                icon: Icon(
+                                  Icons.arrow_drop_down,
+                                  color: isDarkMode ? Colors.white : Colors.black,
+                                  size: 18,
+                                ),
+                                dropdownColor:
+                                    isDarkMode ? Colors.grey[800] : Colors.white,
+                                menuMaxHeight: 200,
+                                borderRadius: BorderRadius.circular(12),
+                                style: TextStyle(
+                                  color: isDarkMode ? Colors.white : Colors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                items: currencies.map((Currency currency) {
+                                  return DropdownMenuItem<Currency>(
+                                    value: currency,
+                                    child: Text(
+                                        '${currency.symbol} ${currency.code}'),
+                                  );
+                                }).toList(),
+                                onChanged: (Currency? newCurrency) {
+                                  if (newCurrency != null) {
+                                    setState(() {
+                                      selectedCurrency = newCurrency;
+                                      if (totalCost > 0) {
+                                        calculateTotal();
+                                      }
+                                    });
+                                  }
+                                },
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: Icon(
-                              isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                              size: 30,
+                            const SizedBox(width: 8),
+                            // Refresh + Theme buttons
+                            Tooltip(
+                              message: 'Refresh exchange rates',
+                              child: IconButton(
+                                icon: isLoadingRates
+                                    ? SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                            isDarkMode
+                                                ? Colors.white70
+                                                : Colors.grey[600]!,
+                                          ),
+                                        ),
+                                      )
+                                    : Icon(
+                                        Icons.refresh,
+                                        size: 20,
+                                        color: isDarkMode
+                                            ? Colors.white70
+                                            : Colors.grey[700],
+                                      ),
+                                onPressed:
+                                    isLoadingRates ? null : _fetchExchangeRates,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: isDarkMode
+                                      ? Colors.grey[800]
+                                      : Colors.white,
+                                  elevation: 2,
+                                  padding: const EdgeInsets.all(10),
+                                  minimumSize: const Size(40, 40),
+                                ),
+                              ),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                isDarkMode = !isDarkMode;
-                              });
-                            },
-                            style: IconButton.styleFrom(
-                              backgroundColor:
-                                  isDarkMode ? Colors.grey[800] : Colors.white,
-                              elevation: 2,
-                              padding: const EdgeInsets.all(12),
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: Icon(
+                                isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                                size: 24,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  isDarkMode = !isDarkMode;
+                                });
+                                _saveThemePreference(isDarkMode);
+                              },
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    isDarkMode ? Colors.grey[800] : Colors.white,
+                                elevation: 2,
+                                padding: const EdgeInsets.all(10),
+                                minimumSize: const Size(40, 40),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      // Desktop/Tablet Layout: Full navbar
+                      return Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Logo + Title/Subtitle
+                            Row(
+                              children: [
+                                Container(
+                                  width: 50,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isDarkMode
+                                          ? Colors.grey[700]!
+                                          : Colors.grey[300]!,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.asset(
+                                      'assets/pcbuilderhelper.jpg',
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'PC Build Helper',
+                                      style: TextStyle(
+                                        fontSize: MediaQuery.of(context).size.width < 900 ? 18 : 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: isDarkMode
+                                            ? Colors.white
+                                            : Colors.grey[900],
+                                      ),
+                                    ),
+                                    Text(
+                                      'Calculate your build budget',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isDarkMode
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            // Currency Dropdown + Refresh + Theme
+                            Row(
+                              children: [
+                                // Currency selector
+                                Container(
+                                  width: 150,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isDarkMode ? Colors.grey[800] : Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: isDarkMode
+                                          ? Colors.grey[700]!
+                                          : Colors.grey[300]!,
+                                    ),
+                                  ),
+                                  child: DropdownButton<Currency>(
+                                    value: selectedCurrency,
+                                    underline: const SizedBox(),
+                                    icon: Icon(
+                                      Icons.arrow_drop_down,
+                                      color: isDarkMode ? Colors.white : Colors.black,
+                                    ),
+                                    dropdownColor:
+                                        isDarkMode ? Colors.grey[800] : Colors.white,
+                                    menuMaxHeight: 200,
+                                    borderRadius: BorderRadius.circular(12),
+                                    style: TextStyle(
+                                      color: isDarkMode ? Colors.white : Colors.black,
+                                      fontSize: 14,
+                                    ),
+                                    isExpanded: true,
+                                    items: currencies.map((Currency currency) {
+                                      return DropdownMenuItem<Currency>(
+                                        value: currency,
+                                        child: Text(
+                                            '${currency.symbol} ${currency.code}'),
+                                      );
+                                    }).toList(),
+                                    onChanged: (Currency? newCurrency) {
+                                      if (newCurrency != null) {
+                                        setState(() {
+                                          selectedCurrency = newCurrency;
+                                          if (totalCost > 0) {
+                                            calculateTotal();
+                                          }
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Refresh exchange rates button
+                                Tooltip(
+                                  message: 'Refresh exchange rates',
+                                  child: IconButton(
+                                    icon: isLoadingRates
+                                        ? SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                isDarkMode
+                                                    ? Colors.white70
+                                                    : Colors.grey[600]!,
+                                              ),
+                                            ),
+                                          )
+                                        : Icon(
+                                            Icons.refresh,
+                                            size: 20,
+                                            color: isDarkMode
+                                                ? Colors.white70
+                                                : Colors.grey[700],
+                                          ),
+                                    onPressed:
+                                        isLoadingRates ? null : _fetchExchangeRates,
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: isDarkMode
+                                          ? Colors.grey[800]
+                                          : Colors.white,
+                                      elevation: 2,
+                                      padding: const EdgeInsets.all(10),
+                                      minimumSize: const Size(40, 40),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: Icon(
+                                    isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                                    size: 24,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      isDarkMode = !isDarkMode;
+                                    });
+                                  },
+                                  style: IconButton.styleFrom(
+                                    backgroundColor:
+                                        isDarkMode ? Colors.grey[800] : Colors.white,
+                                    elevation: 2,
+                                    padding: const EdgeInsets.all(10),
+                                    minimumSize: const Size(40, 40),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
                 ),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: EdgeInsets.only(
+                      left: 16.0,
+                      right: 16.0,
+                      top: MediaQuery.of(context).size.width < 600 ? 8.0 : 0,
+                    ),
                     child: Column(
                       children: [
                         Card(
@@ -380,7 +579,7 @@ class MyHomePageState extends State<MyHomePage> {
                                             : Colors.grey[900],
                                       ),
                                     ),
-                                    const Spacer(),
+                                    const SizedBox(width: 8),
                                     if (isLoadingRates)
                                       SizedBox(
                                         width: 16,
